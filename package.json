@@ -1,0 +1,21 @@
+{
+  "name": "fangorn-explorer",
+  "private": true,
+  "type": "module",
+  "description": "Find Fangorn apps by what their data is about, with their ERC-8004 agents and reputation. Reads the chain live; no bake.",
+  "scripts": {
+    "build": "vite build && rm -f dist/assets/*.wasm",
+    "dev": "vite",
+    "deploy": "npm run build && CLOUDFLARE_ACCOUNT_ID=0beaeb0776ca9e8404297afe0da73e5a wrangler pages deploy dist --project-name explorer --branch main",
+    "check": "node check.mjs"
+  },
+  "dependencies": {
+    "@fangorn-network/westmarch": "file:../westmarch",
+    "@huggingface/transformers": "^4.2.0",
+    "viem": "^2.56.3"
+  },
+  "devDependencies": {
+    "vite": "^8.3.1",
+    "wrangler": "^4.83.0"
+  }
+}

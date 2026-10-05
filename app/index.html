@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fangorn Explorer</title>
+<link rel="icon" href="data:,">
+<meta name="description" content="Find Fangorn apps by what their data is about, with their ERC-8004 agents and reputation, read live from the chain.">
+<style>
+  /* The fangorn page shape and tokens (westmarch/site), no paint of its own. */
+  :root {
+    --bg: #fbfbf8; --fg: #1a1c19; --muted: #6a6f68; --line: #dfe1db; --accent: #2f5d45; --mark: #e6eedb;
+    --font: system-ui, sans-serif; --font-display: var(--font); --radius: 3px; --gutter: 16px; --measure: 760px;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+    --bg: #121412; --fg: #e4e6e0; --muted: #959a92; --line: #2a2e29; --accent: #8fbf9f; --mark: #2d3b2a; color-scheme: dark; } }
+  :root[data-theme="dark"] { --bg: #121412; --fg: #e4e6e0; --muted: #959a92; --line: #2a2e29; --accent: #8fbf9f; --mark: #2d3b2a; color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body { background: var(--bg); color: var(--fg); font: 16px/1.5 var(--font); margin: 0; }
+  a { color: var(--accent); } input { font: inherit; color: inherit; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  ul { list-style: none; padding: 0; margin: 0; }
+  h2 { font-size: .75rem; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 28px 0 8px; }
+  small, .hint, #status, .resultsbar, .detail, footer { color: var(--muted); }
+  small, .hint { font-size: .8rem; }
+
+  .bar { position: sticky; top: 0; z-index: 2; background: var(--bg); border-bottom: 1px solid var(--line); }
+  .bar > div, main, footer { max-width: var(--measure); margin: 0 auto; padding-inline: var(--gutter); }
+  .bar > div { padding-block: 10px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  #home { color: var(--fg); text-decoration: none; font: 600 1.1rem var(--font-display); white-space: nowrap; }
+  #q { flex: 1 1 240px; }
+  #q input { width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--radius); background: transparent; }
+  main { padding-block: 16px 48px; }
+
+  .resultsbar { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; font-size: .9rem; margin-bottom: 8px; }
+  .list { border-top: 1px solid var(--line); }
+  .row { padding: 14px 0; border-bottom: 1px solid var(--line); display: flex; gap: 14px; align-items: flex-start; }
+  .main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; overflow-wrap: anywhere; }
+  .head { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+  .title { color: var(--fg); text-decoration: none; font: 600 1.05rem var(--font-display); } .title:hover { color: var(--accent); }
+  .badge { font-size: .7rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--accent);
+    background: var(--mark); padding: 1px 7px; border-radius: 999px; }
+  .meta { font-size: .85rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .detail { margin: 2px 0 0; font-size: .92rem; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .acts { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: .88rem; margin-top: 4px; }
+  .pic { flex: none; line-height: 0; }
+  .identicon { border-radius: 10px; display: block; }
+  .id-bg { fill: hsl(var(--hue) 45% 92%); } .id-fg { fill: hsl(var(--hue) 55% 40%); }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .id-bg { fill: hsl(var(--hue) 25% 20%); }
+    :root:not([data-theme="light"]) .id-fg { fill: hsl(var(--hue) 55% 65%); } }
+  :root[data-theme="dark"] .id-bg { fill: hsl(var(--hue) 25% 20%); } :root[data-theme="dark"] .id-fg { fill: hsl(var(--hue) 55% 65%); }
+
+  /* one app */
+  .back { display: inline-block; font-size: .9rem; margin-bottom: 14px; text-decoration: none; }
+  .apphead { display: flex; gap: 16px; align-items: center; }
+  .apphead h1 { font: 600 1.6rem/1.2 var(--font-display); margin: 0 0 2px; overflow-wrap: anywhere; }
+  .about { font-size: 1rem; margin: 16px 0; }
+  .facts { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 6px 18px; margin: 0; padding: 12px 0;
+    border-block: 1px solid var(--line); font-size: .92rem; }
+  .facts dt { color: var(--muted); } .facts dd { margin: 0; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+  .colls .row { padding: 10px 0; } .colls strong { font-weight: 600; }
+  .colls .detail { -webkit-line-clamp: 2; }
+  .tools code, .facts code { font-size: .82rem; background: var(--mark); padding: 1px 5px; border-radius: var(--radius); }
+  .tools { line-height: 2; margin: 0; }
+  .preview { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; }
+  .preview button { font: inherit; color: var(--fg); background: var(--mark); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 8px 14px; cursor: pointer; }
+  .preview iframe { width: 100%; height: 70vh; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
+  footer { font-size: .85rem; padding-bottom: 32px; }
+
+  /* an app still loading: grey bars in the row's shape, with a light sweeping across */
+  .skel .pic { width: 44px; height: 44px; border-radius: 10px; }
+  .skel .main { gap: 8px; padding-top: 4px; }
+  .skel i { display: block; height: 10px; width: 85%; border-radius: var(--radius); }
+  .skel i.w40 { width: 40%; height: 14px; } .skel i.w60 { width: 60%; }
+  .skel .pic, .skel i { background: linear-gradient(90deg, var(--line) 30%, var(--bg) 50%, var(--line) 70%) 0 0 / 300% 100%;
+    animation: flash 1.4s ease-in-out infinite; }
+  @keyframes flash { from { background-position: 100% 0; } to { background-position: 0 0; } }
+  @media (prefers-reduced-motion: reduce) { .skel .pic, .skel i { animation: none; } }
+</style>
+</head>
+<body>
+<header class="bar"><div>
+  <a id="home" href="#">Fangorn Explorer</a>
+  <form id="q" role="search"><input type="search" name="q" placeholder="Reading the chain…" aria-label="What are you looking for?" disabled></form>
+</div></header>
+<main id="view"><p id="status">Reading the app registry on Arbitrum Sepolia…</p></main>
+<footer>Every app here is read live from the Fangorn AppRegistry, and only apps whose agent cards verify on chain are listed.
+  Ranking runs in your browser against each app's own published coverage, so nobody sees what you searched.
+  Reputation is the ERC-8004 reputation registry's feedback for the app's agent.
+  Agents: <code>fangorn-mcp</code> has the same ranking as <code>find-apps</code>, and this page registers <code>find-fangorn-apps</code> and <code>describe-fangorn-app</code> over WebMCP.</footer>
+<script type="module" src="./main.js"></script>
+</body>
+</html>
